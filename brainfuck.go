@@ -7,10 +7,6 @@ import (
 	"os"
 )
 
-const (
-	buffSize = 100
-)
-
 var (
 	mem    = [30000]byte{}
 	ptr    = 0
