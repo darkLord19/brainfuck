@@ -66,17 +66,17 @@ func (c *cpu) run(prog []byte) {
 			c.mem[c.sp]--
 			verbose("-", c.mem[c.sp], c.sp)
 		case '[':
+			verbose("[", c.mem[c.sp], c.sp)
 			if c.mem[c.sp] == 0 {
 				c.pc = c.matchKeyStart[c.pc]
-				verbose("[", c.mem[c.sp])
+				verbose("[", c.mem[c.sp], c.sp)
 			}
-			verbose("[", c.mem[c.sp], c.sp)
 		case ']':
+			verbose("]", c.mem[c.sp], c.sp)
 			if c.mem[c.sp] > 0 {
 				c.pc = c.matchKeyEnd[c.pc]
 				verbose("]", c.mem[c.sp], c.sp)
 			}
-			verbose("]", c.mem[c.sp], c.sp)
 		case ',':
 			c.getchar()
 			verbose(",", c.mem[c.sp], c.sp)
@@ -84,7 +84,7 @@ func (c *cpu) run(prog []byte) {
 			c.putchar(c.mem[c.sp])
 			verbose(".", c.mem[c.sp], c.sp)
 		}
-		// fmt.Println(string(prog[c.pc]), c.mem[:10], c.pc, c.sp)
+		verbose(string(prog[c.pc]), c.mem[:10], c.pc, c.sp)
 	}
 	c.out.Flush()
 }
