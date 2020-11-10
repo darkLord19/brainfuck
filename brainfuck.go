@@ -2,57 +2,74 @@ package main
 
 import (
 	"bufio"
-	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 )
 
-var (
-	mem    = [30000]byte{}
-	ptr    = 0
-	reader = bufio.NewReader(os.Stdin)
-)
+type cpu struct {
+	mem [30000]byte
+	pc  uint32
+	in  io.Reader
+	out io.Writer
+}
 
-func interpret(code []byte) {
-	for i := 0; i < len(code); i++ {
-		switch code[i] {
+func (c *cpu) getchar() {
+	var input []byte
+	c.in.Read(input)
+	c.mem[c.pc] = []byte(input)[0]
+}
+
+func (c *cpu) putchar(ch byte) {
+	c.out.Write([]byte{ch})
+}
+
+func getMatchingLoopStartPos() uint32 {
+	return 0
+}
+
+func getMatchingLoopEndPos() uint32 {
+	return 0
+}
+
+func (c *cpu) run(prog []byte) {
+	for i := 0; i < len(prog); i++ {
+		switch prog[i] {
 		case '>':
-			ptr++
+			c.pc++
 		case '<':
-			ptr--
+			c.pc--
 		case '+':
-			mem[ptr]++
+			c.mem[c.pc]++
 		case '-':
-			mem[ptr]--
+			c.mem[c.pc]--
 		case '[':
-			if mem[ptr] == 0 {
-				for code[i] != ']' && i < len(code) {
-					i++
-				}
-				i++
+			if c.mem[c.pc] == 0 {
+				pos := getMatchingLoopEndPos()
+				c.pc = pos + 1
+				i = int(c.pc)
 			}
 		case ']':
-			if mem[ptr] != 0 {
-				for code[i] != '[' && i > -1 {
-					i--
-				}
-				i--
+			if c.mem[c.pc] > 0 {
+				pos := getMatchingLoopStartPos()
+				c.pc = pos + 1
+				i = int(c.pc)
 			}
 		case ',':
-			input, _ := reader.ReadString('\n')
-			mem[ptr] = []byte(input)[0]
+			c.getchar()
 		case '.':
-			fmt.Print(string(mem[ptr]))
+			c.putchar(c.mem[c.pc])
 		}
 	}
 }
 
 func main() {
 	if len(os.Args) > 1 {
-		code, err := ioutil.ReadFile(os.Args[1])
+		prog, err := ioutil.ReadFile(os.Args[1])
 		if err != nil {
 			panic(err)
 		}
-		interpret(code)
+		c := cpu{in: bufio.NewReader(os.Stdin), out: bufio.NewWriter(os.Stdout)}
+		c.run(prog)
 	}
 }
