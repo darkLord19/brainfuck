@@ -25,6 +25,7 @@ func (c *cpu) getchar() {
 
 func (c *cpu) putchar(ch byte) {
 	c.out.Write([]byte{ch})
+	c.out.Flush()
 }
 
 func (c *cpu) setMatchingStartEndPairs(prog []byte) error {
@@ -86,7 +87,6 @@ func (c *cpu) run(prog []byte) {
 		}
 		verbose(string(prog[c.pc]), c.mem[:10], c.pc, c.sp)
 	}
-	c.out.Flush()
 }
 
 var (
