@@ -9,11 +9,13 @@ import (
 )
 
 type cpu struct {
-	mem [30000]byte
-	pc  uint32
-	sp  uint32
-	in  *bufio.Reader
-	out *bufio.Writer
+	mem           [30000]byte
+	pc            uint32
+	sp            uint32
+	in            *bufio.Reader
+	out           *bufio.Writer
+	matchKeyStart map[uint32]uint32
+	matchKeyEnd   map[uint32]uint32
 }
 
 func (c *cpu) getchar() {
@@ -25,42 +27,17 @@ func (c *cpu) putchar(ch byte) {
 	c.out.Write([]byte{ch})
 }
 
-func (c *cpu) getMatchingLoopStartPos(prog []byte) uint32 {
-	var start, end byte
-	start = '['
-	end = ']'
-	cnt := 1
-	verbose("matchigStart", c.pc, c.sp)
-	for i := c.pc - 1; i > 0; i-- {
-		if prog[i] == start {
-			cnt--
-		} else if prog[i] == end {
-			cnt++
-		}
-		if cnt == 0 {
-			return i
+func (c *cpu) setMatchingStartEndPairs(prog []byte) {
+	arr := []uint32{}
+	for i := range prog {
+		if prog[i] == '[' {
+			arr = append(arr, uint32(i))
+		} else if prog[i] == ']' {
+			c.matchKeyStart[arr[len(arr)-1]] = uint32(i)
+			c.matchKeyEnd[uint32(i)] = arr[len(arr)-1]
+			arr = arr[:len(arr)-1]
 		}
 	}
-	return 0
-}
-
-func (c *cpu) getMatchingLoopEnspos(prog []byte) uint32 {
-	var start, end byte
-	start = '['
-	end = ']'
-	cnt := 1
-	verbose("matchigEnd", c.pc)
-	for i := c.pc - 1; i >= 0; i-- {
-		if prog[i] == start {
-			cnt++
-		} else if prog[i] == end {
-			cnt--
-		}
-		if cnt == 0 {
-			return i
-		}
-	}
-	return 0
 }
 
 func verbose(op string, args ...interface{}) {
@@ -86,16 +63,14 @@ func (c *cpu) run(prog []byte) {
 			verbose("-", c.mem[c.sp], c.sp)
 		case '[':
 			if c.mem[c.sp] == 0 {
-				pos := c.getMatchingLoopEnspos(prog[c.pc:])
-				c.pc = pos + 1
-				verbose("[", c.mem[c.sp], pos)
+				c.pc = c.matchKeyStart[c.pc]
+				verbose("[", c.mem[c.sp])
 			}
 			verbose("[", c.mem[c.sp], c.sp)
 		case ']':
 			if c.mem[c.sp] > 0 {
-				pos := c.getMatchingLoopStartPos(prog[:c.pc])
-				c.pc = pos + 1
-				verbose("]", c.mem[c.sp], c.sp, pos)
+				c.pc = c.matchKeyEnd[c.pc]
+				verbose("]", c.mem[c.sp], c.sp)
 			}
 			verbose("]", c.mem[c.sp], c.sp)
 		case ',':
@@ -124,7 +99,9 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		c := cpu{in: bufio.NewReader(os.Stdin), out: bufio.NewWriter(os.Stdout)}
+		c := cpu{in: bufio.NewReader(os.Stdin), out: bufio.NewWriter(os.Stdout),
+			matchKeyStart: make(map[uint32]uint32), matchKeyEnd: make(map[uint32]uint32)}
+		c.setMatchingStartEndPairs(prog)
 		c.run(prog)
 	}
 }
