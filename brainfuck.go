@@ -11,13 +11,14 @@ import (
 type cpu struct {
 	mem [30000]byte
 	pc  uint32
+	sp  uint32
 	in  *bufio.Reader
 	out *bufio.Writer
 }
 
 func (c *cpu) getchar() {
 	input, _ := c.in.ReadString('\n')
-	c.mem[c.pc] = []byte(input)[0]
+	c.mem[c.sp] = []byte(input)[0]
 }
 
 func (c *cpu) putchar(ch byte) {
@@ -43,7 +44,7 @@ func (c *cpu) getMatchingLoopStartPos() uint32 {
 	return 0
 }
 
-func (c *cpu) getMatchingLoopEndPos() uint32 {
+func (c *cpu) getMatchingLoopEnspos() uint32 {
 	var start, end byte
 	start = '['
 	end = ']'
@@ -69,42 +70,42 @@ func verbose(op string, args ...interface{}) {
 }
 
 func (c *cpu) run(prog []byte) {
-	for i := 0; i < len(prog); i++ {
-		switch prog[i] {
+	for c.pc = 0; c.pc < uint32(len(prog)); c.pc++ {
+		switch prog[c.pc] {
 		case '>':
-			c.pc++
-			verbose(">", c.pc)
+			c.sp++
+			verbose(">", c.sp)
 		case '<':
-			c.pc--
-			verbose("<", c.pc)
+			c.sp--
+			verbose("<", c.sp)
 		case '+':
-			c.mem[c.pc]++
-			verbose("+", c.mem[c.pc], c.pc)
+			c.mem[c.sp]++
+			verbose("+", c.mem[c.sp], c.sp)
 		case '-':
-			c.mem[c.pc]--
-			verbose("-", c.mem[c.pc], c.pc)
+			c.mem[c.sp]--
+			verbose("-", c.mem[c.sp], c.sp)
 		case '[':
-			if c.mem[c.pc] == 0 {
-				pos := c.getMatchingLoopEndPos()
-				c.pc = pos + 1
-				i = int(c.pc)
-				verbose("[", c.mem[c.pc], pos, i)
+			if c.mem[c.sp] == 0 {
+				pos := c.getMatchingLoopEnspos()
+				c.sp = pos + 1
+				c.pc = c.sp
+				verbose("[", c.mem[c.sp], pos)
 			}
 		case ']':
-			if c.mem[c.pc] > 0 {
+			if c.mem[c.sp] > 0 {
 				pos := c.getMatchingLoopStartPos()
-				c.pc = pos + 1
-				i = int(c.pc)
-				verbose("]", c.mem[c.pc], c.pc, pos, i)
+				c.sp = pos + 1
+				c.pc = c.sp
+				verbose("]", c.mem[c.sp], c.sp, pos)
 			}
 		case ',':
 			c.getchar()
-			verbose(",", c.mem[c.pc], c.pc)
+			verbose(",", c.mem[c.sp], c.sp)
 		case '.':
-			c.putchar(c.mem[c.pc])
-			verbose(".", c.mem[c.pc], c.pc)
+			c.putchar(c.mem[c.sp])
+			verbose(".", c.mem[c.sp], c.sp)
 		}
-		// fmt.Println(prog[i], c.mem[:10], c.pc)
+		// fmt.Println(prog[c.pc], c.mem[:10], c.pc, c.sp)
 	}
 	c.out.Write([]byte{'\n'})
 	c.out.Flush()
