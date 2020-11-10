@@ -27,7 +27,7 @@ func (c *cpu) putchar(ch byte) {
 	c.out.Write([]byte{ch})
 }
 
-func (c *cpu) setMatchingStartEndPairs(prog []byte) {
+func (c *cpu) setMatchingStartEndPairs(prog []byte) error {
 	arr := []uint32{}
 	for i := range prog {
 		if prog[i] == '[' {
@@ -38,6 +38,10 @@ func (c *cpu) setMatchingStartEndPairs(prog []byte) {
 			arr = arr[:len(arr)-1]
 		}
 	}
+	if len(arr) != 0 {
+		return fmt.Errorf("missing pairs of [ ]")
+	}
+	return nil
 }
 
 func verbose(op string, args ...interface{}) {
@@ -101,7 +105,10 @@ func main() {
 		}
 		c := cpu{in: bufio.NewReader(os.Stdin), out: bufio.NewWriter(os.Stdout),
 			matchKeyStart: make(map[uint32]uint32), matchKeyEnd: make(map[uint32]uint32)}
-		c.setMatchingStartEndPairs(prog)
+		err = c.setMatchingStartEndPairs(prog)
+		if err != nil {
+			panic(err)
+		}
 		c.run(prog)
 	}
 }
