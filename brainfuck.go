@@ -63,7 +63,7 @@ func (c *cpu) getMatchingLoopEndPos() uint32 {
 }
 
 func verbose(op string, args ...interface{}) {
-	if *vFlag {
+	if vFlag {
 		fmt.Println(op, args)
 	}
 }
@@ -104,19 +104,23 @@ func (c *cpu) run(prog []byte) {
 			c.putchar(c.mem[c.pc])
 			verbose(".", c.mem[c.pc], c.pc)
 		}
+		// fmt.Println(prog[i], c.mem[:10], c.pc)
 	}
+	c.out.Write([]byte{'\n'})
 	c.out.Flush()
 }
 
 var (
-	vFlag *bool
+	vFlag bool
 )
 
 func main() {
-	vFlag = flag.Bool("v", false, "verbose output")
+	var fname string
+	flag.BoolVar(&vFlag, "v", false, "verbose output")
+	flag.StringVar(&fname, "f", "", "filename containing brainfuck program")
 	flag.Parse()
-	if len(os.Args) > 1 {
-		prog, err := ioutil.ReadFile(os.Args[1])
+	if fname != "" {
+		prog, err := ioutil.ReadFile(fname)
 		if err != nil {
 			panic(err)
 		}
