@@ -90,12 +90,14 @@ func (c *cpu) run(prog []byte) {
 				c.pc = pos + 1
 				verbose("[", c.mem[c.sp], pos)
 			}
+			verbose("[", c.mem[c.sp], c.sp)
 		case ']':
 			if c.mem[c.sp] > 0 {
 				pos := c.getMatchingLoopStartPos(prog[:c.pc])
 				c.pc = pos + 1
 				verbose("]", c.mem[c.sp], c.sp, pos)
 			}
+			verbose("]", c.mem[c.sp], c.sp)
 		case ',':
 			c.getchar()
 			verbose(",", c.mem[c.sp], c.sp)
