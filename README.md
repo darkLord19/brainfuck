@@ -1,4 +1,4 @@
-# Brainfuck interpreter written in Go
+# Brainfuck interpreter written in Go Word isour playground
 
 Brainfuck is an esoteric programming language created in 1993 by Urban Müller.
 
